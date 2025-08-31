@@ -406,7 +406,8 @@
                         items: [scannedItems[index]], // Salva cada um com seu respectivo item
                         recebedor: name,
                         foto: photoSrc,
-                        assinatura: signaturePad.toDataURL()
+                        assinatura: signaturePad.toDataURL(),
+                        timestamp: new Date() // Captura a data e hora
                     });
                 });
 
@@ -442,8 +443,13 @@
             // --- RESUMO (usado apenas pela tela de Consulta agora) ---
             function populateDetailedSummaryView(protocol) {
                 const summaryContainer = document.getElementById('summary-items-list');
+                const timestamp = new Date(protocol.timestamp).toLocaleString('pt-BR');
                 summaryContainer.innerHTML = `
-                    <h4 class="font-semibold text-gray-800">Item Entregue:</h4>
+                    <div class="mb-2">
+                        <h4 class="font-semibold text-gray-800">Data da Entrega:</h4>
+                        <p>${timestamp}</p>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 border-t pt-2 mt-2">Item Entregue:</h4>
                     <p>Pedido: ${protocol.items[0].pedido} / NF: ${protocol.items[0].nf}</p>
                     <h3 class="font-semibold text-gray-800 border-t pt-2 mt-2">Recebido por: <span class="font-normal text-gray-600">${protocol.recebedor}</span></h3>
                     <div>
@@ -481,11 +487,13 @@
                             item.dataset.id = p.id;
 
                             const firstItem = p.items && p.items.length > 0 ? p.items[0] : { pedido: 'N/A', nf: 'N/A' };
+                            const timestamp = new Date(p.timestamp).toLocaleString('pt-BR');
                             
                             item.innerHTML = `
                                 <p class="font-bold">Pedido: ${firstItem.pedido}</p>
                                 <p class="text-sm text-gray-700">NF: ${firstItem.nf}</p>
                                 <p class="text-sm text-gray-600 mt-1">Recebido por: ${p.recebedor}</p>
+                                <p class="text-xs text-gray-500 mt-1">${timestamp}</p>
                             `;
                             item.addEventListener('click', async () => {
                                 const protocolDetails = await getProtocolFromDB(p.id);
