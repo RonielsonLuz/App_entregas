@@ -9,6 +9,8 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- Biblioteca para captura de assinatura -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <!-- Biblioteca para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         /* Estilos adicionais para o app */
         body {
@@ -115,7 +117,12 @@
                 <h1 class="text-2xl font-bold text-gray-800">Consultar Protocolos</h1>
                 <p class="text-gray-600">Busque por entregas salvas</p>
             </header>
-            <input type="text" id="search-input" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar por pedido, NF ou recebedor...">
+            <div class="my-4">
+                <input type="text" id="search-input" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar por pedido, NF ou recebedor...">
+            </div>
+             <button id="download-pdf-btn" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300 mb-4 disabled:bg-gray-400">
+                Baixar Todos em PDF
+            </button>
             <div id="protocol-list" class="mt-4 space-y-2"></div>
             <button class="back-to-main-btn mt-6 w-full text-center text-sm text-gray-600 hover:underline">Voltar ao Início</button>
         </div>
@@ -177,6 +184,17 @@
                     const store = transaction.objectStore('entregas');
                     const request = store.get(Number(id));
                     request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+            
+            function getAllProtocolsFromDB() {
+                 return new Promise((resolve, reject) => {
+                     if (!db) reject('Banco de dados não está disponível.');
+                    const transaction = db.transaction(['entregas'], 'readonly');
+                    const store = transaction.objectStore('entregas');
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result.sort((a,b) => b.id - a.id));
                     request.onerror = () => reject(request.error);
                 });
             }
@@ -474,13 +492,16 @@
             // --- CONSULTAS ---
             async function displayProtocols(query = '') {
                 const listContainer = document.getElementById('protocol-list');
+                 const downloadBtn = document.getElementById('download-pdf-btn');
                 listContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
                 try {
                     const protocols = await searchProtocolsInDB(query);
                     listContainer.innerHTML = '';
                     if (protocols.length === 0) {
                         listContainer.innerHTML = '<p class="text-gray-500">Nenhum protocolo encontrado.</p>';
+                        downloadBtn.disabled = true;
                     } else {
+                        downloadBtn.disabled = false;
                         protocols.forEach(p => {
                             const item = document.createElement('div');
                             item.className = 'protocol-item p-3 border rounded-md hover:bg-gray-50';
@@ -506,8 +527,65 @@
                     }
                 } catch (error) {
                     listContainer.innerHTML = '<p class="text-red-500">Erro ao carregar protocolos.</p>';
+                    downloadBtn.disabled = true;
                 }
             }
+            
+            async function generatePDF() {
+                const downloadBtn = document.getElementById('download-pdf-btn');
+                downloadBtn.textContent = 'Gerando PDF...';
+                downloadBtn.disabled = true;
+
+                try {
+                    const protocols = await getAllProtocolsFromDB();
+                    if(protocols.length === 0) {
+                        alert('Nenhum protocolo para exportar.');
+                        return;
+                    }
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    for(let i = 0; i < protocols.length; i++) {
+                        const p = protocols[i];
+                        if (i > 0) doc.addPage();
+
+                        doc.setFontSize(16);
+                        doc.text('Protocolo de Entrega Digital', 15, 20);
+
+                        doc.setFontSize(12);
+                        const timestamp = new Date(p.timestamp).toLocaleString('pt-BR');
+                        doc.text(`Data e Hora: ${timestamp}`, 15, 30);
+
+                        doc.setLineWidth(0.5);
+                        doc.line(15, 35, 195, 35);
+
+                        doc.setFontSize(11);
+                        doc.text(`Pedido: ${p.items[0].pedido}`, 15, 45);
+                        doc.text(`Nota Fiscal: ${p.items[0].nf}`, 15, 52);
+                        doc.text(`Recebido por: ${p.recebedor}`, 15, 59);
+
+                        doc.setFontSize(12);
+                        doc.text('Foto do Recebedor:', 15, 75);
+                        doc.addImage(p.foto, 'JPEG', 15, 80, 80, 60);
+
+                        doc.text('Assinatura:', 15, 155);
+                        doc.addImage(p.assinatura, 'PNG', 15, 160, 80, 40);
+                    }
+                    
+                    doc.save('protocolos_de_entrega.pdf');
+
+                } catch (error) {
+                    console.error("Erro ao gerar PDF:", error);
+                    alert("Ocorreu um erro ao gerar o PDF.");
+                } finally {
+                    downloadBtn.textContent = 'Baixar Todos em PDF';
+                    downloadBtn.disabled = false;
+                }
+            }
+            
+            document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
+
 
             document.getElementById('search-input').addEventListener('keyup', (e) => {
                 displayProtocols(e.target.value);
