@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protocolo de Entrega Digital</title>
+    
+    <!-- Ícone do Aplicativo (Substitua os links abaixo pelo seu ícone) -->
+    <link rel="icon" href="icone-app.png" type="image/png">
+    <link rel="apple-touch-icon" href="icone-app.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca para escanear QR Code -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -21,11 +26,10 @@
         .view.active { display: block; }
         #reader {
             width: 100%;
-            border: 2px solid #e5e7eb;
             border-radius: 0.5rem;
         }
         .signature-canvas {
-            border: 2px solid #e5e7eb;
+            border: 2px solid #e2e8f0;
             border-radius: 0.5rem;
             width: 100%;
             height: 200px;
@@ -35,49 +39,62 @@
         .status-message {
             transition: opacity 0.5s ease-out;
         }
+        .sync-status-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        .btn-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-slate-50 font-sans">
 
-    <div class="container mx-auto max-w-lg p-4 min-h-screen bg-white shadow-lg">
+    <div class="container mx-auto max-w-lg p-4 min-h-screen bg-gradient-to-b from-white to-sky-50 shadow-lg">
 
         <!-- TELA 1: INICIAL -->
         <div id="main-view" class="view active">
-            <header class="text-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Protocolo de Entrega Digital</h1>
-                <p class="text-gray-600">Escaneie um protocolo ou consulte os registros</p>
+            <header class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-sky-800">Protocolo de Entrega</h1>
+                <p class="text-slate-500">Gestão digital de comprovantes</p>
             </header>
 
             <div class="space-y-4">
-                <button id="goto-scanner-btn" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition duration-300">
+                <button id="goto-scanner-btn" class="w-full flex items-center justify-center bg-sky-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-sky-700 transition duration-300 shadow-md">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6.5 6.5l-1.5-1.5M4 12H2m15.5 6.5l1.5-1.5M12 20v-1m6-15.5l-1.5 1.5M4.5 4.5l1.5 1.5"></path></svg>
                     Escanear QR Codes
                 </button>
-                <button id="goto-consultas-btn" class="w-full bg-gray-600 text-white font-bold py-3 px-4 rounded-md hover:bg-gray-700 transition duration-300">
-                    Consultar Protocolos Salvos
+                <button id="goto-consultas-btn" class="w-full flex items-center justify-center bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition duration-300 shadow-md">
+                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Consultar Protocolos
                 </button>
             </div>
+             <div id="connection-status" class="mt-8 text-center text-xs text-slate-500"></div>
         </div>
 
         <!-- TELA 2: SCANNER DE QR CODE (MÚLTIPLO) -->
         <div id="scanner-view" class="view">
             <header class="text-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Escanear QR Codes</h1>
-                <p class="text-gray-600">Escaneie um ou mais códigos em sequência.</p>
+                <h1 class="text-2xl font-bold text-sky-800">Escanear QR Codes</h1>
+                <p class="text-slate-500">Aponte a câmera para os códigos.</p>
             </header>
-            <div id="reader"></div>
-            <!-- Mensagem de status do scan -->
+            <div id="reader" class="border-slate-200 border-2"></div>
             <div id="scan-status" class="text-center font-semibold p-2 my-2 rounded-md status-message opacity-0"></div>
-            <!-- Lista de itens escaneados -->
             <div class="mt-4">
-                <h3 class="font-semibold text-gray-700">Itens Escaneados: <span id="scan-count">0</span></h3>
-                <div id="scanned-list" class="mt-2 space-y-1 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-md border">
-                    <p class="text-xs text-gray-500">Aguardando leitura...</p>
+                <h3 class="font-semibold text-slate-700">Itens Escaneados: <span id="scan-count">0</span></h3>
+                <div id="scanned-list" class="mt-2 space-y-1 max-h-32 overflow-y-auto bg-slate-50 p-2 rounded-md border border-slate-200">
+                    <p class="text-xs text-slate-500">Aguardando leitura...</p>
                 </div>
             </div>
-            <button id="finish-scan-btn" class="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 disabled:bg-gray-400" disabled>
+            <button id="finish-scan-btn" class="mt-4 w-full bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 transition duration-300 disabled:bg-slate-400 shadow-sm" disabled>
                 Preencher Protocolos
             </button>
-            <button class="back-to-main-btn mt-2 w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition duration-300">
+            <button class="back-to-main-btn mt-2 w-full bg-rose-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300 shadow-sm">
                 Cancelar e Voltar
             </button>
         </div>
@@ -85,15 +102,15 @@
         <!-- TELA 3: FORMULÁRIO DE PROTOCOLOS (MÚLTIPLO) -->
         <div id="protocol-view" class="view">
             <header class="text-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Preencher Protocolos</h1>
-                <p class="text-gray-600">Preencha os dados para cada entrega abaixo.</p>
+                <h1 class="text-2xl font-bold text-sky-800">Preencher Protocolos</h1>
+                <p class="text-slate-500">Complete as informações para cada entrega.</p>
             </header>
             <div id="protocol-forms-container" class="space-y-8">
                 <!-- Formulários individuais serão inseridos aqui -->
             </div>
-            <div class="mt-8 pt-4 border-t">
-                <button id="save-all-protocols-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 text-lg">Salvar Todos os Protocolos</button>
-                <button class="back-to-main-btn mt-2 w-full text-center text-sm text-gray-600 hover:underline">Cancelar e Voltar</button>
+            <div class="mt-8 pt-4 border-t border-slate-200">
+                <button id="save-all-protocols-btn" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-800 text-lg shadow-md">Salvar Todos os Protocolos</button>
+                <button class="back-to-main-btn mt-2 w-full text-center text-sm text-slate-600 hover:underline">Cancelar e Voltar</button>
             </div>
         </div>
         
@@ -101,30 +118,37 @@
         <div id="summary-view" class="view">
              <header class="text-center mb-6">
                 <h1 id="summary-title" class="text-2xl font-bold text-green-600"></h1>
-                <p id="summary-subtitle" class="text-gray-600"></p>
+                <p id="summary-subtitle" class="text-slate-500"></p>
             </header>
-            <div class="space-y-4 bg-gray-50 p-4 rounded-lg border">
+            <div class="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                  <div id="summary-items-list" class="space-y-2 text-sm">
                     <!-- Resumo dos itens será inserido aqui -->
                 </div>
             </div>
-             <button id="summary-back-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700">Voltar</button>
+             <button id="summary-back-btn" class="mt-6 w-full bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700">Voltar</button>
         </div>
 
         <!-- TELA 5: CONSULTA DE PROTOCOLOS -->
         <div id="consultas-view" class="view">
             <header class="text-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Consultar Protocolos</h1>
-                <p class="text-gray-600">Busque por entregas salvas</p>
+                <h1 class="text-2xl font-bold text-sky-800">Consultar Protocolos</h1>
+                <p class="text-slate-500">Busque por entregas salvas.</p>
             </header>
             <div class="my-4">
-                <input type="text" id="search-input" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar por pedido, NF ou recebedor...">
+                <input type="text" id="search-input" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Buscar por pedido, NF ou TAG...">
             </div>
-             <button id="download-pdf-btn" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300 mb-4 disabled:bg-gray-400">
-                Baixar Todos em PDF
-            </button>
+            <div class="flex space-x-2 mb-4">
+                <button id="sync-btn" class="w-full flex items-center justify-center bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 transition duration-300 disabled:bg-slate-400 shadow-sm">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l5 5M20 20l-5-5"></path></svg>
+                    <span>Sincronizar</span>
+                </button>
+                <button id="download-pdf-btn" class="w-full flex items-center justify-center bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition duration-300 disabled:bg-slate-400 shadow-sm">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Baixar PDF</span>
+                </button>
+            </div>
             <div id="protocol-list" class="mt-4 space-y-2"></div>
-            <button class="back-to-main-btn mt-6 w-full text-center text-sm text-gray-600 hover:underline">Voltar ao Início</button>
+            <button class="back-to-main-btn mt-6 w-full text-center text-sm text-slate-600 hover:underline">Voltar ao Início</button>
         </div>
 
     </div>
@@ -148,17 +172,30 @@
 
             // --- BANCO DE DADOS (INDEXEDDB) ---
             function initDB() {
-                const request = indexedDB.open('protocolosDB', 1);
+                // Versão 4 para garantir que o onupgradeneeded seja chamado se o índice não existir
+                const request = indexedDB.open('protocolosDB', 4);
 
                 request.onupgradeneeded = (event) => {
                     const dbInstance = event.target.result;
-                    const store = dbInstance.createObjectStore('entregas', { keyPath: 'id', autoIncrement: true });
-                    store.createIndex('search_idx', ['pedido', 'nf', 'recebedor'], { unique: false });
+                    let store;
+                    if (!dbInstance.objectStoreNames.contains('entregas')) {
+                        store = dbInstance.createObjectStore('entregas', { keyPath: 'id', autoIncrement: true });
+                    } else {
+                        store = event.target.transaction.objectStore('entregas');
+                    }
+                    
+                    if (!store.indexNames.contains('search_idx')) {
+                        store.createIndex('search_idx', ['pedido', 'nf', 'recebedor', 'tag'], { unique: false });
+                    }
+                     if (!store.indexNames.contains('synced_idx')) {
+                        store.createIndex('synced_idx', 'synced', { unique: false });
+                    }
                 };
 
                 request.onsuccess = (event) => {
                     db = event.target.result;
                     console.log('Banco de dados iniciado com sucesso.');
+                    syncPendingProtocols(); // Tenta sincronizar ao iniciar
                 };
 
                 request.onerror = (event) => {
@@ -177,6 +214,17 @@
                 });
             }
             
+            function updateProtocolInDB(protocol) {
+                return new Promise((resolve, reject) => {
+                    if (!db) reject('Banco de dados não está disponível.');
+                    const transaction = db.transaction(['entregas'], 'readwrite');
+                    const store = transaction.objectStore('entregas');
+                    const request = store.put(protocol);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
             function getProtocolFromDB(id) {
                  return new Promise((resolve, reject) => {
                     if (!db) reject('Banco de dados não está disponível.');
@@ -210,11 +258,12 @@
                         const lowerCaseQuery = query.toLowerCase();
                         const results = request.result.filter(p => {
                             const isRecebedorMatch = p.recebedor.toLowerCase().includes(lowerCaseQuery);
+                            const isTagMatch = p.tag && p.tag.toLowerCase().includes(lowerCaseQuery);
                             const isItemMatch = p.items && p.items.some(item => 
                                 item.pedido.toLowerCase().includes(lowerCaseQuery) || 
                                 item.nf.toLowerCase().includes(lowerCaseQuery)
                             );
-                            return isRecebedorMatch || isItemMatch;
+                            return isRecebedorMatch || isItemMatch || isTagMatch;
                         }).sort((a,b) => b.id - a.id); // Mais recentes primeiro
                         resolve(results);
                     };
@@ -222,14 +271,25 @@
                 });
             }
             
-            // --- NAVEGAÇÃO ---
+            // --- NAVEGAÇÃO E STATUS ---
             function showView(viewName) {
                 Object.values(views).forEach(view => view.classList.remove('active'));
                 views[viewName].classList.add('active');
             }
 
+            function updateConnectionStatus() {
+                const statusEl = document.getElementById('connection-status');
+                if (navigator.onLine) {
+                    statusEl.textContent = 'Status: Online';
+                    statusEl.className = 'mt-8 text-center text-xs text-green-600';
+                } else {
+                    statusEl.textContent = 'Status: Offline (dados serão salvos localmente)';
+                    statusEl.className = 'mt-8 text-center text-xs text-red-600';
+                }
+            }
+
             document.getElementById('goto-scanner-btn').addEventListener('click', () => {
-                scannedItems = []; // Limpa a lista para uma nova sessão de escaneamento
+                scannedItems = [];
                 updateScannedListUI();
                 showView('scanner');
                 startScanner();
@@ -251,28 +311,18 @@
              function showScanStatus(message, type = 'success') {
                 const statusEl = document.getElementById('scan-status');
                 statusEl.textContent = message;
-
                 statusEl.classList.remove('bg-green-100', 'text-green-800', 'bg-yellow-100', 'text-yellow-800', 'bg-red-100', 'text-red-800');
-                
-                if (type === 'success') {
-                    statusEl.classList.add('bg-green-100', 'text-green-800');
-                } else if (type === 'warning') {
-                     statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
-                } else { // error
-                     statusEl.classList.add('bg-red-100', 'text-red-800');
-                }
-
+                if (type === 'success') statusEl.classList.add('bg-green-100', 'text-green-800');
+                else if (type === 'warning') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+                else statusEl.classList.add('bg-red-100', 'text-red-800');
                 statusEl.style.opacity = '1';
                 if (statusTimeout) clearTimeout(statusTimeout);
-                statusTimeout = setTimeout(() => {
-                    statusEl.style.opacity = '0';
-                }, 2000);
+                statusTimeout = setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
             }
 
             function handleScanSuccess(decodedText) {
                 try {
                     const data = JSON.parse(decodedText);
-
                     if (data && typeof data === 'object' && data.pedido && data.nf) {
                         const isDuplicate = scannedItems.some(item => item.pedido === data.pedido && item.nf === data.nf);
                         if (isDuplicate) {
@@ -295,17 +345,15 @@
                 const listContainer = document.getElementById('scanned-list');
                 const countEl = document.getElementById('scan-count');
                 const finishBtn = document.getElementById('finish-scan-btn');
-
                 countEl.textContent = scannedItems.length;
-
                 if (scannedItems.length === 0) {
-                    listContainer.innerHTML = '<p class="text-xs text-gray-500">Aguardando leitura...</p>';
+                    listContainer.innerHTML = '<p class="text-xs text-slate-500">Aguardando leitura...</p>';
                     finishBtn.disabled = true;
                 } else {
                     listContainer.innerHTML = '';
                     scannedItems.forEach(item => {
                         const div = document.createElement('div');
-                        div.className = 'text-xs p-1 bg-white rounded border';
+                        div.className = 'text-xs p-1 bg-white rounded border border-slate-200';
                         div.textContent = `Pedido: ${item.pedido}, NF: ${item.nf}`;
                         listContainer.appendChild(div);
                     });
@@ -316,7 +364,6 @@
             function startScanner() {
                 html5QrCode = new Html5Qrcode("reader");
                 const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
                 html5QrCode.start({ facingMode: "environment" }, config, handleScanSuccess)
                 .catch(err => {
                     alert("Não foi possível acessar a câmera. Verifique as permissões.");
@@ -334,7 +381,6 @@
                 if (scannedItems.length === 0) return;
                 stopScanner();
                 showView('protocol');
-                // Adicionado um pequeno delay para garantir que a view esteja visível antes de inicializar os pads
                 setTimeout(populateMultiProtocolForms, 50);
             });
 
@@ -342,29 +388,32 @@
             function populateMultiProtocolForms() {
                 const container = document.getElementById('protocol-forms-container');
                 container.innerHTML = '';
-                signaturePads = []; // Resetar a lista de pads
-
+                signaturePads = [];
                 scannedItems.forEach((item, index) => {
                     const formHtml = `
-                        <div class="protocol-form-card border p-4 rounded-lg shadow-sm" data-index="${index}">
-                            <div class="space-y-1 text-sm bg-gray-50 p-3 rounded-md border mb-4">
+                        <div class="protocol-form-card border border-slate-200 p-4 rounded-lg shadow-sm" data-index="${index}">
+                            <div class="space-y-1 text-sm bg-slate-50 p-3 rounded-md border border-slate-200 mb-4">
                                 <p><strong>Pedido:</strong> ${item.pedido} / <strong>NF:</strong> ${item.nf}</p>
                             </div>
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Foto do Recebedor</label>
-                                    <button class="take-photo-btn mt-1 w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-md hover:bg-gray-300">Tirar Foto</button>
+                                    <label class="block text-sm font-medium text-slate-700">Foto do Recebedor</label>
+                                    <button class="take-photo-btn mt-1 w-full bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Tirar Foto</button>
                                     <input type="file" class="photo-input hidden" accept="image/*" capture="user">
-                                    <img class="photo-preview mt-2 rounded-md hidden max-w-full h-auto">
+                                    <img class="photo-preview mt-2 rounded-lg hidden max-w-full h-auto">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Nome do Recebedor</label>
-                                    <input type="text" class="receiver-name mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm" placeholder="Nome completo de quem recebeu">
+                                    <label class="block text-sm font-medium text-slate-700">Nome do Recebedor</label>
+                                    <input type="text" class="receiver-name mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Nome completo de quem recebeu">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Assinatura</label>
+                                    <label class="block text-sm font-medium text-slate-700">TAG do Equipamento (Opcional)</label>
+                                    <input type="text" class="equipment-tag mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Ex: P-501, TQ-02, etc.">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Assinatura</label>
                                     <canvas class="signature-canvas"></canvas>
-                                    <button class="clear-signature-btn mt-1 text-sm text-blue-600 hover:underline">Limpar</button>
+                                    <button class="clear-signature-btn mt-1 text-sm text-sky-600 hover:underline">Limpar</button>
                                 </div>
                             </div>
                         </div>
@@ -372,21 +421,15 @@
                     container.insertAdjacentHTML('beforeend', formHtml);
                 });
 
-                // Anexar eventos e inicializar signature pads DEPOIS que o HTML foi adicionado
-                document.querySelectorAll('.protocol-form-card').forEach((card, index) => {
+                document.querySelectorAll('.protocol-form-card').forEach((card) => {
                     const canvas = card.querySelector('.signature-canvas');
-                    
-                    // Redimensionamento do canvas
                     const ratio = Math.max(window.devicePixelRatio || 1, 1);
                     canvas.width = canvas.offsetWidth * ratio;
                     canvas.height = canvas.offsetHeight * ratio;
                     canvas.getContext("2d").scale(ratio, ratio);
-                    
                     const pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
                     signaturePads.push(pad);
-
                     card.querySelector('.clear-signature-btn').addEventListener('click', () => pad.clear());
-                    
                     const photoInput = card.querySelector('.photo-input');
                     card.querySelector('.take-photo-btn').addEventListener('click', () => photoInput.click());
                     photoInput.addEventListener('change', (event) => {
@@ -410,75 +453,128 @@
 
                 forms.forEach((card, index) => {
                     const name = card.querySelector('.receiver-name').value.trim();
+                    const tag = card.querySelector('.equipment-tag').value.trim();
                     const photoSrc = card.querySelector('.photo-preview').src;
                     const signaturePad = signaturePads[index];
-
                     if (!name || !photoSrc || signaturePad.isEmpty()) {
                         allFormsValid = false;
                         card.style.borderColor = 'red';
                     } else {
                          card.style.borderColor = '';
                     }
-
                     protocolsToSave.push({
-                        items: [scannedItems[index]], // Salva cada um com seu respectivo item
+                        items: [scannedItems[index]],
                         recebedor: name,
+                        tag: tag,
                         foto: photoSrc,
                         assinatura: signaturePad.toDataURL(),
-                        timestamp: new Date() // Captura a data e hora
+                        timestamp: new Date(),
+                        synced: 0 // Salva como não sincronizado (0 para false)
                     });
                 });
 
                 if (!allFormsValid) {
-                    return alert('Todos os campos de todos os protocolos são obrigatórios. Verifique os cartões marcados em vermelho.');
+                    return alert('Todos os campos (exceto TAG) de todos os protocolos são obrigatórios.');
                 }
                 
                 try {
                     const savePromises = protocolsToSave.map(p => saveProtocolToDB(p));
                     await Promise.all(savePromises);
-                    
-                    // Mostra mensagem de sucesso e retorna para a tela inicial
                     document.getElementById('summary-title').textContent = `${protocolsToSave.length} Protocolo(s) Salvo(s)!`;
                     document.getElementById('summary-subtitle').textContent = 'Retornando à tela inicial...';
                     document.getElementById('summary-items-list').innerHTML = '';
                     const summaryBackButton = document.getElementById('summary-back-btn');
                     summaryBackButton.style.display = 'none';
-                    
                     showView('summary');
-
                     setTimeout(() => {
                         summaryBackButton.style.display = 'block';
                         showView('main');
-                    }, 2000); // Aguarda 2 segundos
-
+                        syncPendingProtocols(); // Tenta sincronizar após salvar
+                    }, 2000);
                 } catch (error) {
                     console.error('Erro ao salvar protocolos:', error);
                     alert('Não foi possível salvar os protocolos.');
                 }
             });
 
+            // --- SINCRONIZAÇÃO OFFLINE ---
+            async function syncPendingProtocols() {
+                const syncBtn = document.getElementById('sync-btn');
+                const syncBtnText = syncBtn.querySelector('span');
 
-            // --- RESUMO (usado apenas pela tela de Consulta agora) ---
+                if (!navigator.onLine) {
+                    console.log("Offline, sincronização adiada.");
+                    if(syncBtn) syncBtn.disabled = true;
+                    return;
+                }
+                 if(syncBtn) {
+                    syncBtn.disabled = true;
+                    if(syncBtnText) syncBtnText.textContent = 'Sincronizando...';
+                 }
+
+                const transaction = db.transaction(['entregas'], 'readonly');
+                const store = transaction.objectStore('entregas');
+                const index = store.index('synced_idx');
+                const request = index.getAll(IDBKeyRange.only(0)); // Pega todos com synced = 0 (false)
+
+                request.onsuccess = async () => {
+                    const pending = request.result;
+                    if (pending.length === 0) {
+                        console.log("Nenhum protocolo pendente para sincronizar.");
+                        if(syncBtn) {
+                           if(syncBtnText) syncBtnText.textContent = 'Sincronizar';
+                           syncBtn.disabled = true; // Desabilita se não há nada para sincronizar
+                        }
+                        await displayProtocols();
+                        return;
+                    }
+
+                    console.log(`Sincronizando ${pending.length} protocolos...`);
+                    
+                    // *** SIMULAÇÃO DE ENVIO PARA O SERVIDOR ***
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const updatePromises = pending.map(p => {
+                        p.synced = 1; // Marca como sincronizado (1 para true)
+                        return updateProtocolInDB(p);
+                    });
+                    
+                    await Promise.all(updatePromises);
+                    
+                    console.log("Sincronização concluída.");
+                    if(syncBtn) {
+                        if (syncBtnText) syncBtnText.textContent = 'Sincronizar';
+                        syncBtn.disabled = false;
+                    }
+                    if(views.consultas.classList.contains('active')) {
+                        await displayProtocols();
+                    }
+                };
+                 request.onerror = (event) => {
+                    console.error("Erro ao buscar protocolos pendentes:", event.target.error);
+                     if(syncBtn) {
+                        if (syncBtnText) syncBtnText.textContent = 'Sincronizar';
+                        syncBtn.disabled = false;
+                    }
+                };
+            }
+            document.getElementById('sync-btn').addEventListener('click', syncPendingProtocols);
+            window.addEventListener('online', () => { updateConnectionStatus(); syncPendingProtocols(); });
+            window.addEventListener('offline', updateConnectionStatus);
+            
+            // --- RESUMO ---
             function populateDetailedSummaryView(protocol) {
                 const summaryContainer = document.getElementById('summary-items-list');
                 const timestamp = new Date(protocol.timestamp).toLocaleString('pt-BR');
+                let tagHtml = protocol.tag ? `<div class="mt-2"><h4 class="font-semibold text-slate-800">TAG do Equipamento:</h4><p>${protocol.tag}</p></div>` : '';
                 summaryContainer.innerHTML = `
-                    <div class="mb-2">
-                        <h4 class="font-semibold text-gray-800">Data da Entrega:</h4>
-                        <p>${timestamp}</p>
-                    </div>
-                    <h4 class="font-semibold text-gray-800 border-t pt-2 mt-2">Item Entregue:</h4>
+                    <div class="mb-2"><h4 class="font-semibold text-slate-800">Data da Entrega:</h4><p>${timestamp}</p></div>
+                    <h4 class="font-semibold text-slate-800 border-t border-slate-200 pt-2 mt-2">Item Entregue:</h4>
                     <p>Pedido: ${protocol.items[0].pedido} / NF: ${protocol.items[0].nf}</p>
-                    <h3 class="font-semibold text-gray-800 border-t pt-2 mt-2">Recebido por: <span class="font-normal text-gray-600">${protocol.recebedor}</span></h3>
-                    <div>
-                        <h4 class="font-semibold text-gray-800">Foto do Recebedor:</h4>
-                        <img src="${protocol.foto}" class="mt-2 rounded-md border max-w-full h-auto">
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-800">Assinatura:</h4>
-                        <img src="${protocol.assinatura}" class="mt-2 rounded-md border bg-white max-w-full h-auto">
-                    </div>
-                `;
+                    <h3 class="font-semibold text-slate-800 border-t border-slate-200 pt-2 mt-2">Recebido por: <span class="font-normal text-slate-600">${protocol.recebedor}</span></h3>
+                    ${tagHtml}
+                    <div><h4 class="font-semibold text-slate-800">Foto do Recebedor:</h4><img src="${protocol.foto}" class="mt-2 rounded-lg border border-slate-200 max-w-full h-auto"></div>
+                    <div><h4 class="font-semibold text-slate-800">Assinatura:</h4><img src="${protocol.assinatura}" class="mt-2 rounded-lg border border-slate-200 bg-white max-w-full h-auto"></div>`;
                 document.getElementById('summary-title').textContent = 'Detalhes do Protocolo';
                 document.getElementById('summary-subtitle').textContent = 'Resumo da entrega salva.';
                 summaryReturnView = 'consultas';
@@ -492,35 +588,46 @@
             // --- CONSULTAS ---
             async function displayProtocols(query = '') {
                 const listContainer = document.getElementById('protocol-list');
-                 const downloadBtn = document.getElementById('download-pdf-btn');
-                listContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
+                const downloadBtn = document.getElementById('download-pdf-btn');
+                const syncBtn = document.getElementById('sync-btn');
+                listContainer.innerHTML = '<p class="text-slate-500">Carregando...</p>';
                 try {
                     const protocols = await searchProtocolsInDB(query);
                     listContainer.innerHTML = '';
                     if (protocols.length === 0) {
-                        listContainer.innerHTML = '<p class="text-gray-500">Nenhum protocolo encontrado.</p>';
+                        listContainer.innerHTML = '<p class="text-slate-500">Nenhum protocolo encontrado.</p>';
                         downloadBtn.disabled = true;
+                        syncBtn.disabled = true;
                     } else {
                         downloadBtn.disabled = false;
+                        const hasPending = protocols.some(p => !p.synced);
+                        syncBtn.disabled = !hasPending;
+
                         protocols.forEach(p => {
                             const item = document.createElement('div');
-                            item.className = 'protocol-item p-3 border rounded-md hover:bg-gray-50';
+                            item.className = 'protocol-item p-3 border border-slate-200 rounded-lg hover:bg-slate-50 flex justify-between items-center';
                             item.dataset.id = p.id;
 
-                            const firstItem = p.items && p.items.length > 0 ? p.items[0] : { pedido: 'N/A', nf: 'N/A' };
+                            const firstItem = p.items[0];
                             const timestamp = new Date(p.timestamp).toLocaleString('pt-BR');
-                            
+                            const tagHtml = p.tag ? `<p class="text-xs text-sky-600 mt-1">TAG: ${p.tag}</p>` : '';
+                            const syncIcon = p.synced 
+                                ? `<svg class="sync-status-icon text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`
+                                : `<svg class="sync-status-icon text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
                             item.innerHTML = `
-                                <p class="font-bold">Pedido: ${firstItem.pedido}</p>
-                                <p class="text-sm text-gray-700">NF: ${firstItem.nf}</p>
-                                <p class="text-sm text-gray-600 mt-1">Recebido por: ${p.recebedor}</p>
-                                <p class="text-xs text-gray-500 mt-1">${timestamp}</p>
+                                <div>
+                                    <p class="font-bold text-slate-800">${syncIcon}Pedido: ${firstItem.pedido}</p>
+                                    <p class="text-sm text-slate-700">NF: ${firstItem.nf}</p>
+                                    <p class="text-sm text-slate-600 mt-1">Recebido por: ${p.recebedor}</p>
+                                    ${tagHtml}
+                                    <p class="text-xs text-slate-500 mt-1">${timestamp}</p>
+                                </div>
+                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             `;
                             item.addEventListener('click', async () => {
                                 const protocolDetails = await getProtocolFromDB(p.id);
-                                if(protocolDetails) {
-                                   populateDetailedSummaryView(protocolDetails);
-                                }
+                                if(protocolDetails) populateDetailedSummaryView(protocolDetails);
                             });
                             listContainer.appendChild(item);
                         });
@@ -533,67 +640,60 @@
             
             async function generatePDF() {
                 const downloadBtn = document.getElementById('download-pdf-btn');
-                downloadBtn.textContent = 'Gerando PDF...';
+                const btnText = downloadBtn.querySelector('span');
+                if(btnText) btnText.textContent = 'Gerando...';
+                
                 downloadBtn.disabled = true;
-
                 try {
                     const protocols = await getAllProtocolsFromDB();
                     if(protocols.length === 0) {
                         alert('Nenhum protocolo para exportar.');
                         return;
                     }
-
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF();
-                    
                     for(let i = 0; i < protocols.length; i++) {
                         const p = protocols[i];
                         if (i > 0) doc.addPage();
-
                         doc.setFontSize(16);
                         doc.text('Protocolo de Entrega Digital', 15, 20);
-
                         doc.setFontSize(12);
                         const timestamp = new Date(p.timestamp).toLocaleString('pt-BR');
                         doc.text(`Data e Hora: ${timestamp}`, 15, 30);
-
                         doc.setLineWidth(0.5);
                         doc.line(15, 35, 195, 35);
-
                         doc.setFontSize(11);
                         doc.text(`Pedido: ${p.items[0].pedido}`, 15, 45);
                         doc.text(`Nota Fiscal: ${p.items[0].nf}`, 15, 52);
                         doc.text(`Recebido por: ${p.recebedor}`, 15, 59);
-
+                        let currentY = 59;
+                        if (p.tag) {
+                            doc.text(`TAG do Equipamento: ${p.tag}`, 15, 66);
+                            currentY = 66;
+                        }
                         doc.setFontSize(12);
-                        doc.text('Foto do Recebedor:', 15, 75);
-                        doc.addImage(p.foto, 'JPEG', 15, 80, 80, 60);
-
-                        doc.text('Assinatura:', 15, 155);
-                        doc.addImage(p.assinatura, 'PNG', 15, 160, 80, 40);
+                        doc.text('Foto do Recebedor:', 15, currentY + 16);
+                        doc.addImage(p.foto, 'JPEG', 15, currentY + 21, 80, 60);
+                        doc.text('Assinatura:', 15, currentY + 96);
+                        doc.addImage(p.assinatura, 'PNG', 15, currentY + 101, 80, 40);
                     }
-                    
                     doc.save('protocolos_de_entrega.pdf');
-
                 } catch (error) {
                     console.error("Erro ao gerar PDF:", error);
                     alert("Ocorreu um erro ao gerar o PDF.");
                 } finally {
-                    downloadBtn.textContent = 'Baixar Todos em PDF';
-                    downloadBtn.disabled = false;
+                     if(btnText) btnText.textContent = 'Baixar PDF';
+                     downloadBtn.disabled = false;
                 }
             }
             
             document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
-
-
-            document.getElementById('search-input').addEventListener('keyup', (e) => {
-                displayProtocols(e.target.value);
-            });
+            document.getElementById('search-input').addEventListener('keyup', (e) => { displayProtocols(e.target.value); });
             
             // --- INICIALIZAÇÃO ---
             initDB();
             showView('main');
+            updateConnectionStatus(); // Checa status ao iniciar
         });
     </script>
 </body>
